@@ -6,6 +6,8 @@
 #include "LSM6DSLSensor.h"
 #include "lis3mdl_class.h"
 #include "VL53L0X.h"
+#include "string.h"
+#include <cstdio>
 
 // objects for various sensors
 static DevI2C devI2c(PB_11,PB_10);
@@ -15,7 +17,7 @@ static LSM6DSLSensor acc_gyro(&devI2c,0xD4,D4,D5); // high address
 static LIS3MDL magnetometer(&devI2c, 0x3C);
 static DigitalOut shutdown_pin(PC_6);
 static VL53L0X range(&devI2c, &shutdown_pin, PC_7, 0x52);
-
+static UnbufferedSerial pc(USBTX, USBRX);
 
 // functions to print sensor data
 void print_t_rh(){
@@ -66,7 +68,6 @@ int main() {
     int32_t axes[3];
 
     hum_temp.init(NULL);
-
     press_temp.init(NULL);
     magnetometer.init(NULL);
     acc_gyro.init(NULL);
@@ -100,7 +101,32 @@ int main() {
     print_distance();
     printf("\r\n");
     
-    while(1) {
-        wait_us(500000);
+    while (1) {
+        if(pc.readable()){
+            char input;
+            pc.read(&input, 1);
+            switch (input) {
+                case 'T':
+                    print_t_rh();
+                    break;
+                case 'M':
+                    print_mag();
+                    break;
+                case 'A':
+                    print_accel();
+                    break;
+                case 'G':
+                    print_gyro();
+                    break;
+                case'D':
+                    print_distance();
+                    break;
+                default:
+                    printf(" default \r\n");
+                    break;            
+            }
+        
+        }
+
     }
 }
